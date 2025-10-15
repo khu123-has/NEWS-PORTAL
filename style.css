@@ -1,0 +1,253 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  background: #f5f6fa;
+  color: #333;
+}
+
+header {
+  background: #003366;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+header input {
+  padding: 8px;
+  width: 250px;
+  border: none;
+  border-radius: 5px;
+  margin-left: 10px;
+}
+
+header button {
+  padding: 8px 15px;
+  margin-left: 5px;
+  background: #ffcc00;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#newsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.news-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.news-card:hover {
+  transform: scale(1.03);
+}
+
+.news-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.news-content {
+  padding: 15px;
+}
+
+.news-content h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.news-content p {
+  font-size: 14px;
+  color: #555;
+}
+
+.news-content a {
+  display: inline-block;
+  margin-top: 10px;
+  text-decoration: none;
+  color: #003366;
+  font-weight: bold;
+}
+
+footer {
+  background: #003366;
+  color: white;
+  text-align: center;
+  padding: 10px;
+}
+#langSelect {
+  padding: 8px;
+  border-radius: 5px;
+  border: none;
+  background: #ffcc00;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+body.dark #langSelect {
+  background: #222;
+  color: #fff;
+}
+3️⃣ script.js
+javascript
+Copy code
+const apiKey = "YOUR_API_KEY"; // Replace with your NewsAPI key
+const newsContainer = document.getElementById("newsContainer");
+const searchBtn = document.getElementById("searchBtn");
+const searchInput = document.getElementById("searchInput");
+const categoryButtons = document.querySelectorAll(".cat-btn");
+const themeToggle = document.getElementById("themeToggle");
+const langSelect = document.getElementById("langSelect");
+
+let currentLang = "en"; // default English
+
+// Default load
+fetchNews("general", true);
+
+async function fetchNews(query, isCategory = false) {
+  newsContainer.innerHTML = "<p style='text-align:center;'>Loading news...</p>";
+
+  const url = isCategory
+    ? `https://newsapi.org/v2/top-headlines?country=in&category=${query}&language=${currentLang}&pageSize=12&apiKey=${apiKey}`
+    : `https://newsapi.org/v2/everything?q=${query}&language=${currentLang}&sortBy=publishedAt&pageSize=12&apiKey=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.articles || data.articles.length === 0) {
+      newsContainer.innerHTML = "<p style='text-align:center;'>No news found.</p>";
+      return;
+    }
+    displayNews(data.articles);
+  } catch (error) {
+    newsContainer.innerHTML = "<p style='text-align:center;color:red;'>Error fetching news.</p>";
+  }
+}
+
+function displayNews(articles) {
+  newsContainer.innerHTML = "";
+  articles.forEach((article) => {
+    const card = document.createElement("div");
+    card.classList.add("news-card");
+    card.innerHTML = `
+      <img src="${article.urlToImage || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="News Image" />
+      <div class="news-content">
+        <h2>${article.title}</h2>
+        <p>${article.description || "No description available."}</p>
+        <a href="${article.url}" target="_blank">${currentLang === "hi" ? "पूरा पढ़ें →" : "Read More →"}</a>
+      </div>
+    `;
+    newsContainer.appendChild(card);
+  });
+}
+
+// Search functionality
+searchBtn.addEventListener("click", () => {
+  const query = searchInput.value.trim();
+  if (query) fetchNews(query);
+});
+
+// Category buttons
+categoryButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const category = btn.getAttribute("data-category");
+    fetchNews(category, true);
+  });
+});
+
+// Dark mode toggle
+themeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  themeToggle.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+});
+
+// Language switch
+langSelect.addEventListener("change", () => {
+  currentLang = langSelect.value;
+  const activeCategory = document.querySelector(".cat-btn.active");
+  fetchNews(activeCategory ? activeCategory.getAttribute("data-category") : "general", true);
+});
+4️⃣ manifest.json
+(same as before)
+
+json
+Copy code
+{
+  "name": "Live News Portal",
+  "short_name": "NewsPortal",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#003366",
+  "theme_color": "#003366",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+5️⃣ service-worker.js
+(same as before — keeps caching files for offline use)
+
+javascript
+Copy code
+const CACHE_NAME = "news-portal-v2";
+const urlsToCache = [
+  "./",
+  "./index.html",
+  "./style.css",
+  "./script.js",
+  "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
+];
+
+self.addEventListener("install", event => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))
+    )
+  );
+});
+
+self.addEventListener("fetch", event => {
+  event.respondWith(caches.match(event.request).then(r => r || fetch(event.request)));
+});
+⚙️ How It Works
+✅ User can switch between English and Hindi from the dropdown.
+✅ All categories, search, and results update instantly in that language.
+✅ Works offline & can be installed like an app.
+✅ Supports dark/light mode.
+
+Would you like me to also make it show a message or cached page when offline (like “You’re offline – please reconnect”)?
+That’s the final step to make it behave exactly like a native mobile news app.
+
+
+
+
+
+
+
