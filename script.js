@@ -1,4 +1,4 @@
-const apiKey = "91ef694b6670446da388fee85f115252"; 
+const apiKey = "91ef694b6670446da388fee85f115252""; 
 const newsContainer = document.getElementById("newsContainer");
 const searchBtn = document.getElementById("searchBtn");
 const searchInput = document.getElementById("searchInput");
@@ -50,5 +50,6 @@ langSelect.addEventListener("change", () => {
   const activeCategory = document.querySelector(".cat-btn.active");
   fetchNews(activeCategory ? activeCategory.getAttribute("data-category") : "general", true);
 });
+
 
 
